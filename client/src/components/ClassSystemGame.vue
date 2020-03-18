@@ -12,15 +12,44 @@
       <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
       <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
     </ul>
+    <div ref="game">
+      <p>
+        {{ status }}
+      </p>
+    </div>
   </div>
+
 </template>
 
 <script>
+  import io from "socket.io-client";
   export default {
-    name: 'HelloWorld',
+    name: 'ClassSystem',
     props: {
-      msg: String
-    }
+      msg: String,
+      status: String
+    },
+    data() {
+      return {
+        socket: {},
+        game: {},
+        position: {
+          x: 0,
+          y: 0
+        }
+      }
+    },
+    created() {
+      this.socket = io("http://localhost:3000");
+    },
+    mounted() {
+      this.game = this.$refs.game;
+      this.socket.on("position", data => {
+        this.position = data;
+        this.game.status = this.position.x;
+      });
+    },
+    methods: {}
   }
 </script>
 

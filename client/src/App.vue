@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png">
-    <ClassSystemGame msg="Welcome to Class-System Game.js App"/>
+    <ClassSystemGame msg="Welcome to Class-System Game.js App" orig="Ready to start?"/>
   </div>
 </template>
 
