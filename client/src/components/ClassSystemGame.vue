@@ -14,8 +14,9 @@
     </ul>
     <div ref="game">
       <p>
-        {{ status }}
+        status: {{ status }}
       </p>
+      <button v-on:click="move('right')">Right</button>
     </div>
   </div>
 
@@ -24,15 +25,14 @@
 <script>
   import io from "socket.io-client";
   export default {
-    name: 'ClassSystem',
+    name: 'ClassSystemGame',
     props: {
-      msg: String,
-      status: String
+      msg: String
     },
     data() {
       return {
         socket: {},
-        game: {},
+        status: "init",
         position: {
           x: 0,
           y: 0
@@ -41,15 +41,21 @@
     },
     created() {
       this.socket = io("http://localhost:3000");
+      this.status = "created"
+      console.log("created " + this.status)
     },
     mounted() {
-      this.game = this.$refs.game;
+      this.status = "mounted";
       this.socket.on("position", data => {
         this.position = data;
-        this.game.status = this.position.x;
+        this.status = this.position.x;
+        console.log("socket on " + this.status)
       });
+      console.log("test")
     },
-    methods: {}
+    methods: {
+      move(direction) { this.socket.emit("move", direction); },
+    }
   }
 </script>
 

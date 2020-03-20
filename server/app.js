@@ -21,6 +21,7 @@ SocketIO.on("connection", socket => {
                 break;
             case "right":
                 position.x += 5;
+                console.log("emit position " + position.x)
                 SocketIO.emit("position", position);
                 break;
             case "up":
