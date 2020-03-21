@@ -11,7 +11,8 @@
       <p>
         Player count: {{ playerCount }}
       </p>
-      <button v-on:click="join('Kimmo')">Join game</button>
+      <input v-model="playerName" placeholder="Player name">
+      <button v-on:click="join(playerName)">Join game</button>
       <p>Players:</p>
       <ul id="player-list">
         <li v-for="player in players" :key="player.id">
