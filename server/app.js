@@ -1,21 +1,26 @@
 const Express = require("express")();
 const Http = require("http").Server(Express);
-const SocketIO = require("socket.io")(Http);
+const Server = require("socket.io")(Http);
 
-var players = [];
+const MinPlayers = 3;
+
+var game = {
+    players: [],
+    state: "init"
+}
 
 Http.listen(3000, () => {
     console.log("Listening at :3000...");
 });
 
-SocketIO.on("connection", socket => {
-    socket.emit("players", players);
-    socket.on("join", data => {
-        let playerSocketId = socket.id;
+Server.on("connection", client => {
+    client.emit("game", game);
+    client.on("join", data => {
+        let playerSocketId = client.id;
         let playerName = data;
 
         // Prevent same sesison joining multiple times
-        if(players.find(x => x.id === playerSocketId)){
+        if(game.players.find(x => x.id === playerSocketId)){
             console.log("Player already joined in this game!")
             return;
         }
@@ -24,8 +29,19 @@ SocketIO.on("connection", socket => {
         console.log("- name: " + playerName)
         console.log("- id: " + playerSocketId);
         let newPlayer = {"name": playerName, "id": playerSocketId };
-        players.push(newPlayer);
-        console.log("Players: " + players.length)
-        SocketIO.emit("players", players);
+        game.players.push(newPlayer);
+        console.log("Players: " + game.players.length)
+        Server.emit("game", game);
+    });
+
+    client.on("start", data => {
+        if(game.players.length >= MinPlayers){
+            console.log("Starting the game...")
+            game.state = "started";
+            Server.emit("game", game);
+        }
+        else{
+            console.warn("Not enough players to start the game!")
+        }
     });
 });
