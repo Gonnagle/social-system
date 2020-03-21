@@ -1,22 +1,17 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <h2>Powered by Vue.js</h2>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
+    <h2>Getting started links</h2>
     <ul>
+      <li><a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a></li>
       <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
       <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
     </ul>
     <div ref="game">
       <p>
-        status: {{ status }}
+        Players: {{ playerCount }}
       </p>
-      <button v-on:click="move('right')">Right</button>
+      <button v-on:click="join('Kimmo')">Join game</button>
     </div>
   </div>
 
@@ -32,29 +27,23 @@
     data() {
       return {
         socket: {},
-        status: "init",
-        position: {
-          x: 0,
-          y: 0
-        }
+        playerCount: 0,
       }
     },
     created() {
       this.socket = io("http://localhost:3000");
-      this.status = "created"
-      console.log("created " + this.status)
+      console.log("created with " + this.playerCount + " players")
     },
     mounted() {
-      this.status = "mounted";
-      this.socket.on("position", data => {
-        this.position = data;
-        this.status = this.position.x;
-        console.log("socket on " + this.status)
+      this.socket.on("players", data => {
+        this.players = data;
+        this.playerCount = this.players.length;
+        console.log("Player count updated to: " + this.playerCount)
       });
       console.log("test")
     },
     methods: {
-      move(direction) { this.socket.emit("move", direction); },
+      join(playername) { this.socket.emit("join", playername); },
     }
   }
 </script>
