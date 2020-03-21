@@ -9,9 +9,15 @@
     </ul>
     <div ref="game">
       <p>
-        Players: {{ playerCount }}
+        Player count: {{ playerCount }}
       </p>
       <button v-on:click="join('Kimmo')">Join game</button>
+      <p>Players:</p>
+      <ul id="player-list">
+        <li v-for="player in players" :key="player.id">
+          {{ player.name }}
+        </li>
+      </ul>
     </div>
   </div>
 
@@ -27,6 +33,7 @@
     data() {
       return {
         socket: {},
+        players: [],
         playerCount: 0,
       }
     },
