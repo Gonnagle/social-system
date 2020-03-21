@@ -13,6 +13,13 @@ SocketIO.on("connection", socket => {
     socket.on("join", data => {
         let playerSocketId = socket.id;
         let playerName = data;
+
+        // Prevent same sesison joining multiple times
+        if(players.find(x => x.id === playerSocketId)){
+            console.log("Player already joined in this game!")
+            return;
+        }
+
         console.log("new player");
         console.log("- name: " + playerName)
         console.log("- id: " + playerSocketId);
