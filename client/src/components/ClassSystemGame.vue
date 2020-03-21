@@ -12,7 +12,7 @@
         Player count: {{ playerCount }}
       </p>
       <input v-model="playerName" placeholder="Player name">
-      <button v-on:click="join(playerName)">Join game</button>
+      <button :disabled="playerName.length <= 0 || joined" v-on:click="join(playerName)">Join game</button>
       <p>Players:</p>
       <ul id="player-list">
         <li v-for="player in players" :key="player.id">
@@ -35,7 +35,9 @@
       return {
         socket: {},
         players: [],
+        joined: false,
         playerCount: 0,
+        playerName: ""
       }
     },
     created() {
@@ -51,7 +53,10 @@
       console.log("test")
     },
     methods: {
-      join(playername) { this.socket.emit("join", playername); },
+      join(playername) { 
+        this.socket.emit("join", playername);
+        this.joined = true; 
+      },
     }
   }
 </script>
