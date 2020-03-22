@@ -23,9 +23,16 @@
           {{ player.name }}
         </li>
       </ul>
+      <div v-if="game.state === 'started'">
+        <ul id="hand">
+          <!-- TODO index as a temp key... -->
+          <li v-for="(card, index) in hand" :key="index">
+            {{ card.number }} {{ card.name }}
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -41,6 +48,7 @@
         game: {
           players: []
         },
+        hand: [],
         joined: false,
         playerCount: 0,
         playerName: ""
@@ -58,6 +66,17 @@
 
         if(this.playerCount === 0){
           this.playerName = "";
+        }
+
+        // console.log(this.game.players.length);
+
+        var that = this;
+
+        if(this.game.state === "started"){
+          // TODO should be getting only own hand...
+          that.hand = that.game.players.find(x => x.id === that.socket.id).hand;
+
+          console.log(that.hand.length);
         }
       });
       console.log("test")
