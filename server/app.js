@@ -84,6 +84,15 @@ class Game {
             console.warn("Not enough players to start the game!")
         }
     }
+
+    pass(){
+        ++this.turnIndex;
+        if(this.turnIndex >= this.players.length){
+            this.turnIndex = 0;
+        }
+
+        // TODO check if round is over
+    }
 }
 
 var game = new Game([], "init");
@@ -105,6 +114,13 @@ IO.on("connection", client => {
 
     client.on("start", data => {
         game.start();
+
+        IO.emit("game", game);
+    });
+
+    client.on("pass", data => {
+        console.log("Pass")
+        game.pass();
 
         IO.emit("game", game);
     });

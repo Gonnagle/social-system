@@ -24,8 +24,14 @@
         </li>
       </ul>
       <div v-if="game.state === 'started'">
-        <p v-if="myTurn">Your turn!</p>
-        <p v-else>Player {{ game.players[game.turnIndex].name }} is thinking...</p>
+        <div v-if="myTurn">
+          <p>Your turn!</p>
+          <button v-on:click="pass()">Pass</button>
+          <button v-on:click="play()">Play</button>
+        </div>
+        <div v-else>
+          <p>Player {{ game.players[game.turnIndex].name }} is thinking...</p>
+        </div>
         <ul id="hand">
           <!-- TODO index as a temp key... -->
           <li v-for="(card, index) in hand" :key="index">
@@ -52,6 +58,7 @@
           players: []
         },
         hand: [],
+        pickedCards: [],
         myTurn: false,
         joined: false,
         playerCount: 0,
@@ -96,10 +103,19 @@
         this.socket.emit("start");
       }, 
       pick(card, index) {
+        this.pickedCards.push(card);
         console.log("Picked " + card.name + " (index: " + index + ")");
         // TODO check can that be played by itself or does somethgin else need to picked also
         // + leave only valid possibilities to be picked
+      },
+      pass() {
+        this.socket.emit("pass");
+      },
+      play() {
+        console.log("Play! TODO play picked cards");
+        this.socket.emit("play", this.pickedCards);
       }
+
     }
   }
 </script>
