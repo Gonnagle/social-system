@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "card-deck": "^1.0.1",
     "express": "^4.17.1",
     "socket.io": "^2.3.0"
   },
