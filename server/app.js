@@ -64,6 +64,25 @@ class Game {
             console.log("Hand has " + player.hand.length)
         });
     }
+
+    start(){
+        if(this.state != "init"){
+            console.error("Can not start game that is not in init state!");
+            return;
+        }
+
+        if(this.players.length >= MinPlayers){
+            console.log("Starting the game...")
+            this.state = "started";
+            // Sort by rank
+            this.players.sort((a,b) => a.rank - b.rank);
+
+            this.deal();
+        }
+        else{
+            console.warn("Not enough players to start the game!")
+        }
+    }
 }
 
 var game = new Game([], "init");
@@ -84,22 +103,9 @@ IO.on("connection", client => {
     });
 
     client.on("start", data => {
-        if(game.state != "init"){
-            console.error("Can not start game that is not in init state!");
-            return;
-        }
+        game.start();
 
-        if(game.players.length >= MinPlayers){
-            console.log("Starting the game...")
-            game.state = "started";
-
-            game.deal();
-
-            IO.emit("game", game);
-        }
-        else{
-            console.warn("Not enough players to start the game!")
-        }
+        IO.emit("game", game);
     });
 });
 
