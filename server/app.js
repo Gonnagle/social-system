@@ -20,11 +20,12 @@ class Game {
         this.players = players;
         this.state = state;
         this.deck = InitDeck();
+        this.turnIndex = 0;
     }
 
     addPlayer(player){
         // Prevent same sesison joining multiple times
-        if(game.players.find(x => x.id === playerSocketId)){
+        if(game.players.find(x => x.id === player.id)){
             console.log("Player already joined in this game!")
             return;
         }

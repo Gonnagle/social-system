@@ -20,14 +20,17 @@
       <p>Players:</p>
       <ul id="player-list">
         <li v-for="player in game.players" :key="player.id">
-          {{ player.name }}
+          [{{ player.rank}}] {{ player.name }}
         </li>
       </ul>
       <div v-if="game.state === 'started'">
+        <p v-if="myTurn">Your turn!</p>
+        <p v-else>Player {{ game.players[game.turnIndex].name }} is thinking...</p>
         <ul id="hand">
           <!-- TODO index as a temp key... -->
           <li v-for="(card, index) in hand" :key="index">
             {{ card.number }} {{ card.name }}
+            <button v-if="myTurn" v-on:click="pick(card, index)">Pick</button>
           </li>
         </ul>
       </div>
@@ -49,6 +52,7 @@
           players: []
         },
         hand: [],
+        myTurn: false,
         joined: false,
         playerCount: 0,
         playerName: ""
@@ -74,7 +78,9 @@
 
         if(this.game.state === "started"){
           // TODO should be getting only own hand...
-          that.hand = that.game.players.find(x => x.id === that.socket.id).hand;
+          let myPlayerId = that.socket.id;
+          that.hand = that.game.players.find(x => x.id === myPlayerId).hand;
+          that.myTurn = that.game.players[that.game.turnIndex].id === myPlayerId;
 
           console.log(that.hand.length);
         }
@@ -87,7 +93,12 @@
         this.joined = true; 
       },
       start() {
-        this.socket.emit("start")
+        this.socket.emit("start");
+      }, 
+      pick(card, index) {
+        console.log("Picked " + card.name + " (index: " + index + ")");
+        // TODO check can that be played by itself or does somethgin else need to picked also
+        // + leave only valid possibilities to be picked
       }
     }
   }
