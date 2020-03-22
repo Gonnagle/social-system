@@ -7,11 +7,39 @@ const Deck = require("card-deck");
 
 const MinPlayers = 1; // TODO should be 4
 
+class Player {
+    constructor(id, name){
+        this.id = id;
+        this.name = name;
+        this.rank = null; // TODO
+    }
+}
+
 class Game {
     constructor(players, state){
         this.players = players;
         this.state = state;
         this.deck = InitDeck();
+    }
+
+    addPlayer(player){
+        // Prevent same sesison joining multiple times
+        if(game.players.find(x => x.id === playerSocketId)){
+            console.log("Player already joined in this game!")
+            return;
+        }
+
+        console.log("new player");
+        console.log("- name: " + player.name)
+        console.log("- id: " + player.id);
+
+        if(player.rank == null){
+            player.rank = this.players.length + 1
+        }
+
+        console.log("- rank: " + player.rank);
+
+        this.players.push(player);
     }
 
     deal(){
@@ -49,18 +77,8 @@ IO.on("connection", client => {
     client.on("join", data => {
         let playerSocketId = client.id;
         let playerName = data;
-
-        // Prevent same sesison joining multiple times
-        if(game.players.find(x => x.id === playerSocketId)){
-            console.log("Player already joined in this game!")
-            return;
-        }
-
-        console.log("new player");
-        console.log("- name: " + playerName)
-        console.log("- id: " + playerSocketId);
-        let newPlayer = {"name": playerName, "id": playerSocketId };
-        game.players.push(newPlayer);
+        let newPlayer = new Player(playerSocketId, playerName);
+        game.addPlayer(newPlayer);
         console.log("Players: " + game.players.length)
         IO.emit("game", game);
     });
