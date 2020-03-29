@@ -14,7 +14,16 @@
       <p>
         State: {{ game.state }}
       </p>
-      <input :disabled="joined" v-model="playerName" placeholder="Player name">
+      <div v-if="playerName === ''" id="login">
+        <input v-model="username">
+        <input v-model="password">
+        <button v-on:click="login(username, password)">Login</button>
+      </div>
+      <div v-else>
+        <button v-on:click="logout()">Logout</button>
+      </div>
+
+      Player name {{ playerName }}
       <button :disabled="playerName.length <= 0 || joined" v-on:click="join(playerName)">Join game</button>
       <button v-on:click="start()">Start game</button>
       <p>Players:</p>
@@ -41,6 +50,7 @@
         </ul>
       </div>
     </div>
+    <button v-on:click="checkSession()">Test</button>
   </div>
 </template>
 
@@ -54,6 +64,8 @@
     data() {
       return {
         socket: {},
+        username: '',
+        password: '',
         game: {
           players: []
         },
@@ -62,14 +74,36 @@
         myTurn: false,
         joined: false,
         playerCount: 0,
-        playerName: ""
+        playerName: ''
       }
     },
     created() {
       this.socket = io("http://localhost:3000");
       console.log("created with " + this.playerCount + " players")
+
+      this.socket.emit('checksession');
     },
     mounted() {
+      // Session handling stuff
+      this.socket.on("sessiondata", data => {
+        console.info("sessiondata event received. Check the console");
+        console.info("sessiondata is ", data);
+      })
+      this.socket.on("logged_in", data => {
+        this.playerName = data.user.username;
+        console.info("logged_in event received. Check the console");
+        console.info("sessiondata after logged_in event is ", data);
+      })
+      this.socket.on("logged_out", data => {
+        this.playerName = '';
+        console.info("logged_out event received. Check the console");
+        console.info("sessiondata after logged_out event is ", data);
+      })
+      this.socket.on("checksession", data => {
+        console.info("checksession event received. Check the console");
+        console.info("sessiondata after checksession event is ", data);
+      })
+
       this.socket.on("game", data => {
         this.game = data;
         this.playerCount = this.game.players.length;
@@ -95,6 +129,15 @@
       console.log("test")
     },
     methods: {
+      login(username, password) {
+        this.socket.emit('login', {'username': username, 'password': password});
+      },
+      logout() {
+        this.socket.emit('logout');
+      },
+      checkSession() {
+        this.socket.emit('checksession');
+      },
       join(playerName) { 
         this.socket.emit("join", playerName);
         this.joined = true; 

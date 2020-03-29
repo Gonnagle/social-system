@@ -1,9 +1,25 @@
 'use strict';
 
-const Express = require("express")();
-const Http = require("http").Server(Express);
+const Express = require("express");
+const App = Express();
+const Http = require("http").Server(App);
 const IO = require("socket.io")(Http);
 const Deck = require("card-deck");
+
+const Session = require("express-session")({
+    secret: "my-secret",
+    // store: new SessionStore({ path: './tmp/sessions' }),
+    resave: true,
+    saveUninitialized: true,
+    cookie: {
+        maxAge: 1*60*60*1000 // 1 hour
+    }
+});
+
+// const Sharedsession = require("express-socket.io-session");
+ 
+// Use express-session middleware for express
+App.use(Session);
 
 const MinPlayers = 1; // TODO should be 4
 
@@ -95,13 +111,67 @@ class Game {
     }
 }
 
-var game = new Game([], "init");
+let game = new Game([], "init");
 
 Http.listen(3000, () => {
     console.log("Listening at :3000...");
 });
 
+IO.use(function(client, next) {
+    Session(client.handshake, {}, next);
+});
+
+// List of connected clients
+let clients = {};
+
 IO.on("connection", client => {
+    console.log(client.id);
+    console.log(client.handshake.session.id)
+
+    // addClient(client.handshake.session);
+
+    client.emit('sessiondata', client.handshake.session);
+
+    // Set session data via socket
+    console.debug('Emitting session data');
+    client.on('login', data => {
+        console.debug('Received login message');
+
+        // TODO real login :D
+        if(data.password !== data.username + '22'){
+            console.warn("Invalid password!")
+            client.emit('logged_out')
+            return;
+        }
+
+        client.handshake.session.user = {
+            username: data.username
+        };
+        console.debug('client.handshake session data is %j.', client.handshake.session);
+
+        client.handshake.session.save();
+        //emit logged_in for debugging purposes of this example
+        client.emit('logged_in', client.handshake.session);
+    });
+    // Check session data via socket
+    client.on('checksession', function() {
+        console.debug('Received checksession message');
+        console.log(client.handshake.session.id)
+        console.debug('client.handshake session data is %j.', client.handshake.session);
+
+        client.emit('checksession', client.handshake.session);
+    });
+    // Unset session data via socket
+    client.on('logout', function() {
+        console.debug('Received logout message');
+        delete client.handshake.session.user;
+        client.handshake.session.save();
+        //emit logged_out for debugging purposes of this example
+        console.debug('client.handshake session data is %j.', client.handshake.session);
+
+        client.emit('logged_out', client.handshake.session);
+    });
+
     client.emit("game", game);
     client.on("join", data => {
         let playerSocketId = client.id;
@@ -125,6 +195,15 @@ IO.on("connection", client => {
         IO.emit("game", game);
     });
 });
+
+function addClient(session){
+    if(clients[session.id]){
+        session = clients[session.id];
+    }
+    else{
+        clients[session.id] = session;
+    }
+}
 
 // TODO: Maybe construct some classes for these...
 function InitDeck(){
