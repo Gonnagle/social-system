@@ -80,28 +80,43 @@
     created() {
       this.socket = io("http://localhost:3000");
       console.log("created with " + this.playerCount + " players")
-
-      this.socket.emit('checksession');
     },
     mounted() {
+      var session_token = this.$cookies.get('session_token');
+      this.checkSession(session_token);
+
       // Session handling stuff
       this.socket.on("sessiondata", data => {
         console.info("sessiondata event received. Check the console");
         console.info("sessiondata is ", data);
+
+        if(data.user){
+          console.log('already logged in - setting username')
+          this.playerName = data.user.username;
+        }
       })
       this.socket.on("logged_in", data => {
         this.playerName = data.user.username;
+
+        this.$cookies.set('session_token', data.user.token);
         console.info("logged_in event received. Check the console");
         console.info("sessiondata after logged_in event is ", data);
       })
       this.socket.on("logged_out", data => {
         this.playerName = '';
+        this.$cookies.remove('session_token');
         console.info("logged_out event received. Check the console");
         console.info("sessiondata after logged_out event is ", data);
       })
       this.socket.on("checksession", data => {
         console.info("checksession event received. Check the console");
         console.info("sessiondata after checksession event is ", data);
+
+        // TODO - in two places (here and in session data event...)
+        if(data.user){
+          console.log('already logged in - setting username')
+          this.playerName = data.user.username;
+        }
       })
 
       this.socket.on("game", data => {
@@ -133,10 +148,12 @@
         this.socket.emit('login', {'username': username, 'password': password});
       },
       logout() {
-        this.socket.emit('logout');
+        var session_token = this.$cookies.get('session_token');
+        this.socket.emit('logout', session_token);
       },
-      checkSession() {
-        this.socket.emit('checksession');
+      checkSession(token) {
+        console.log('Checking session for token: ' + token);
+        this.socket.emit('checksession', token);
       },
       join(playerName) { 
         this.socket.emit("join", playerName);
