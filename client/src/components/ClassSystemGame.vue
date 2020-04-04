@@ -128,9 +128,9 @@
 
         if(this.game.state === "started"){
           // TODO should be getting only own hand...
-          let myPlayerId = that.socket.id;
-          that.hand = that.game.players.find(x => x.id === myPlayerId).hand;
-          that.myTurn = that.game.players[that.game.turnIndex].id === myPlayerId;
+          // let myPlayerId = that.socket.id;
+          that.hand = that.game.players.find(x => x.name === that.playerName).hand;
+          that.myTurn = that.game.players[that.game.turnIndex].name === that.playerName;
 
           console.log(that.hand.length);
         }

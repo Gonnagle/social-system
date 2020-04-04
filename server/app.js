@@ -26,8 +26,8 @@ App.use(Session);
 const MinPlayers = 1; // TODO should be 4
 
 class Player {
-    constructor(id, name){
-        this.id = id;
+    constructor(name){
+        // this.id = id;
         this.name = name;
         this.rank = null; // TODO
     }
@@ -91,14 +91,14 @@ class Game {
 
     addPlayer(player){
         // Prevent same sesison joining multiple times
-        if(game.players.find(x => x.id === player.id)){
+        if(game.players.find(x => x.name === player.name)){
             console.log("Player already joined in this game!")
             return;
         }
 
         console.log("new player");
         console.log("- name: " + player.name)
-        console.log("- id: " + player.id);
+        // console.log("- id: " + player.id);
 
         if(player.rank == null){
             player.rank = this.players.length + 1
@@ -242,9 +242,9 @@ IO.on("connection", client => {
 
     client.emit("game", game);
     client.on("join", data => {
-        let playerSocketId = client.id;
+        // let playerSocketId = client.id;
         let playerName = data;
-        let newPlayer = new Player(playerSocketId, playerName);
+        let newPlayer = new Player(playerName);
         game.addPlayer(newPlayer);
         console.log("Players: " + game.players.length)
         IO.emit("game", game);
