@@ -124,12 +124,6 @@
         this.playerCount = this.game.players.length;
         console.log("Player count updated to: " + this.playerCount)
 
-        if(this.playerCount === 0){
-          this.playerName = "";
-        }
-
-        // console.log(this.game.players.length);
-
         var that = this;
 
         if(this.game.state === "started"){
@@ -141,7 +135,6 @@
           console.log(that.hand.length);
         }
       });
-      console.log("test")
     },
     methods: {
       login(username, password) {

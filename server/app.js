@@ -46,12 +46,12 @@ class Clients {
     }
 
     addClient(client) {
-        var serverClient = this.clients.find(c => c.player.name === client.player.name);
+        let serverClient = this.clients.find(c => c.player.name === client.player.name);
         if(serverClient){
             console.log('Updating client info for player: ' + client.player.name);
-            console.log('- Token before: ' + this.clients[client.player.name].token);
+            console.log('- Token before: ' + serverClient.token);
             serverClient = client;
-            console.log('- Token after: ' + this.clients[client.player.name].token);
+            console.log('- Token after: ' + serverClient.token);
         }
         else{
             console.log('Adding client for new player: ' + client.player.name);
