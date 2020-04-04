@@ -14,7 +14,16 @@
       <p>
         State: {{ game.state }}
       </p>
-      <input :disabled="joined" v-model="playerName" placeholder="Player name">
+      <div v-if="playerName === ''" id="login">
+        <input v-model="username">
+        <input v-model="password">
+        <button v-on:click="login(username, password)">Login</button>
+      </div>
+      <div v-else>
+        <button v-on:click="logout()">Logout</button>
+      </div>
+
+      Player name {{ playerName }}
       <button :disabled="playerName.length <= 0 || joined" v-on:click="join(playerName)">Join game</button>
       <button v-on:click="start()">Start game</button>
       <p>Players:</p>
@@ -41,6 +50,7 @@
         </ul>
       </div>
     </div>
+    <button v-on:click="checkSession()">Test</button>
   </div>
 </template>
 
@@ -54,6 +64,8 @@
     data() {
       return {
         socket: {},
+        username: '',
+        password: '',
         game: {
           players: []
         },
@@ -62,7 +74,7 @@
         myTurn: false,
         joined: false,
         playerCount: 0,
-        playerName: ""
+        playerName: ''
       }
     },
     created() {
@@ -70,16 +82,47 @@
       console.log("created with " + this.playerCount + " players")
     },
     mounted() {
+      var session_token = this.$cookies.get('session_token');
+      this.checkSession(session_token);
+
+      // Session handling stuff
+      this.socket.on("sessiondata", data => {
+        console.info("sessiondata event received. Check the console");
+        console.info("sessiondata is ", data);
+
+        if(data.user){
+          console.log('already logged in - setting username')
+          this.playerName = data.user.username;
+        }
+      })
+      this.socket.on("logged_in", data => {
+        this.playerName = data.user.username;
+
+        this.$cookies.set('session_token', data.user.token);
+        console.info("logged_in event received. Check the console");
+        console.info("sessiondata after logged_in event is ", data);
+      })
+      this.socket.on("logged_out", data => {
+        this.playerName = '';
+        this.$cookies.remove('session_token');
+        console.info("logged_out event received. Check the console");
+        console.info("sessiondata after logged_out event is ", data);
+      })
+      this.socket.on("checksession", data => {
+        console.info("checksession event received. Check the console");
+        console.info("sessiondata after checksession event is ", data);
+
+        // TODO - in two places (here and in session data event...)
+        if(data.user){
+          console.log('already logged in - setting username')
+          this.playerName = data.user.username;
+        }
+      })
+
       this.socket.on("game", data => {
         this.game = data;
         this.playerCount = this.game.players.length;
         console.log("Player count updated to: " + this.playerCount)
-
-        if(this.playerCount === 0){
-          this.playerName = "";
-        }
-
-        // console.log(this.game.players.length);
 
         var that = this;
 
@@ -92,9 +135,19 @@
           console.log(that.hand.length);
         }
       });
-      console.log("test")
     },
     methods: {
+      login(username, password) {
+        this.socket.emit('login', {'username': username, 'password': password});
+      },
+      logout() {
+        var session_token = this.$cookies.get('session_token');
+        this.socket.emit('logout', session_token);
+      },
+      checkSession(token) {
+        console.log('Checking session for token: ' + token);
+        this.socket.emit('checksession', token);
+      },
       join(playerName) { 
         this.socket.emit("join", playerName);
         this.joined = true; 
