@@ -7,22 +7,6 @@ const IO = require("socket.io")(Http);
 const Deck = require("card-deck");
 const Crypto = require('crypto');
 
-const Session = require("express-session")({
-    secret: "my-secret-möö",
-    // store: new SessionStore({ path: './tmp/sessions' }),
-    resave: true,
-    saveUninitialized: true,
-    cookie: {
-        maxAge: 1*60*60*1000, // 1 hour
-        secure: true
-    }
-});
-
-// const Sharedsession = require("express-socket.io-session");
- 
-// Use express-session middleware for express
-App.use(Session);
-
 const MinPlayers = 1; // TODO should be 4
 
 
@@ -35,9 +19,9 @@ class Player {
 }
 
 class Client {
-    constructor(token, player) {
+    constructor(token, username) {
         this.token = token,
-        this.player = player
+        this.username = username
     }
 }
 
@@ -47,15 +31,15 @@ class Clients {
     }
 
     addClient(client) {
-        let serverClient = this.clients.find(c => c.player.name === client.player.name);
+        let serverClient = this.clients.find(c => c.username === client.username);
         if(serverClient){
-            console.log('Updating client info for player: ' + client.player.name);
+            console.log('Updating client info for player: ' + client.username);
             console.log('- Token before: ' + serverClient.token);
             serverClient = client;
             console.log('- Token after: ' + serverClient.token);
         }
         else{
-            console.log('Adding client for new player: ' + client.player.name);
+            console.log('Adding client for new player: ' + client.username);
             this.clients.push(client);
         }
     }
@@ -71,7 +55,7 @@ class Clients {
 
     getClientName(token) {
         if(this.getClient(token)) {
-            return this.getClient(token).player.name;
+            return this.getClient(token).username;
         }
         return null;
     }
@@ -80,7 +64,7 @@ class Clients {
         const index = this.clients.findIndex(c => c.token === token);
         if(index > -1){
             const serverClient = this.clients[index];
-            console.log('Removing client for player: ' + serverClient.player.name);
+            console.log('Removing client for player: ' + serverClient.username);
             this.clients.splice(index, 1);
         }
         else{
@@ -203,6 +187,10 @@ class Server {
         this.game = new Game([], "init"); 
         this.hands = {};
     }
+
+    getSession(session_token){
+        return this.clients.getClient(session_token);
+    }
 }
 
 let server = new Server();
@@ -211,17 +199,9 @@ Http.listen(3000, () => {
     console.log("Listening at :3000...");
 });
 
-IO.use(function(client, next) {
-    Session(client.handshake, {}, next);
-});
-
 IO.on("connection", client => {
     console.log(client.id);
-    console.log(client.handshake.session.id)
-
-    client.emit('sessiondata', client.handshake.session);
-
-    // Set session data via socket
+  
     console.debug('Emitting session data');
     client.on('login', data => {
         console.debug('Received login message');
@@ -235,48 +215,30 @@ IO.on("connection", client => {
 
         let token = Crypto.randomBytes(48).toString('hex');
 
-        client.handshake.session.user = {
-            username: data.username,
-            token: token
-        };
-        console.debug('client.handshake session data is %j.', client.handshake.session);
+        let client_session = new Client(token, data.username);
 
-        client.handshake.session.save();
-
-        var player = new Player(data.username);
-
-        server.clients.addClient(new Client(client.handshake.session.user.token, player));
+        server.clients.addClient(client_session);
         //emit logged_in for debugging purposes of this example
-        client.emit('logged_in', client.handshake.session);
+        client.emit('logged_in', client_session);
     });
     // Check session data via socket
     client.on('checksession', session_token => {
         console.debug('Received checksession message');
-        console.log(client.handshake.session.id)
-        console.debug('client.handshake session data is %j.', client.handshake.session);
-
         const session = server.clients.getClient(session_token);
 
-        if(session){
-            client.handshake.session.user = {
-                username: session.player.name,
-                token: session.token
-            };
-        }
-
-        client.emit('checksession', client.handshake.session);
+        client.emit('sessiondata', session);
     });
     // Unset session data via socket
     client.on('logout', session_token => {
         console.debug('Received logout message');
-        delete client.handshake.session.user;
-        client.handshake.session.save();
+
+        let session = server.clients.getClient(session_token);
 
         server.clients.removeClient(session_token);
         //emit logged_out for debugging purposes of this example
-        console.debug('client.handshake session data is %j.', client.handshake.session);
+        console.debug('Logged out session %j.', session);
 
-        client.emit('logged_out', client.handshake.session);
+        client.emit('logged_out', session);
     });
 
     client.emit("updateGame", server.game);

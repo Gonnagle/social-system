@@ -90,15 +90,15 @@
         console.info("sessiondata event received. Check the console");
         console.info("sessiondata is ", data);
 
-        if(data.user){
-          console.log('Logged in user - setting username to ' + data.user.username)
-          this.playerName = data.user.username;
+        if(data && data.username){
+          console.log('Logged in user - setting username to ' + data.username);
+          this.playerName = data.username;
         }
       })
       this.socket.on("logged_in", data => {
-        this.playerName = data.user.username;
+        this.playerName = data.username;
 
-        this.$cookies.set('session_token', data.user.token);
+        this.$cookies.set('session_token', data.token);
         console.info("logged_in event received. Check the console");
         console.info("sessiondata after logged_in event is ", data);
       })
@@ -108,16 +108,6 @@
         console.info("logged_out event received. Check the console");
         console.info("sessiondata after logged_out event is ", data);
       })
-      // this.socket.on("checksession", data => {
-      //   console.info("checksession event received. Check the console");
-      //   console.info("sessiondata after checksession event is ", data);
-
-      //   // TODO - in two places (here and in session data event...)
-      //   if(data.user){
-      //     console.log('already logged in - setting username')
-      //     this.playerName = data.user.username;
-      //   }
-      // })
 
       this.socket.on("updateGame", data => {
         this.game = data;
