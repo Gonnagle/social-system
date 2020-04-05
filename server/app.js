@@ -25,6 +25,7 @@ App.use(Session);
 
 const MinPlayers = 1; // TODO should be 4
 
+
 class Player {
     constructor(name){
         // this.id = id;
@@ -41,8 +42,8 @@ class Client {
 }
 
 class Clients {
-    constructor(clients) {
-        this.clients = clients;
+    constructor() {
+        this.clients = [];
     }
 
     addClient(client) {
@@ -65,6 +66,13 @@ class Clients {
             return client;
         }
         console.error('No client found for token: ' + token);
+        return null;
+    }
+
+    getClientName(token) {
+        if(this.getClient(token)) {
+            return this.getClient(token).player.name;
+        }
         return null;
     }
 
@@ -91,15 +99,15 @@ class Game {
 
     addPlayer(player){
         // Prevent same sesison joining multiple times
-        if(game.players.find(x => x.name === player.name)){
+        if(this.players.find(x => x.name === player.name)){
             console.log("Player already joined in this game!")
             return;
         }
 
         console.log("new player");
         console.log("- name: " + player.name)
-        // console.log("- id: " + player.id);
 
+        // TODO actual ranks
         if(player.rank == null){
             player.rank = this.players.length + 1
         }
@@ -109,7 +117,7 @@ class Game {
         this.players.push(player);
     }
 
-    deal(){
+    deal(hands){
         let deckSize = this.deck.remaining();
         console.log("Deck size: " + deckSize);
         let minSizeOfHand = Math.floor(deckSize / this.players.length);
@@ -126,9 +134,11 @@ class Game {
             }
 
             console.log("Drawing " + drawAmount)
-            player.hand = this.deck.draw(drawAmount);
-            player.hand.sort((a,b) => a.number - b.number);
-            console.log("Hand has " + player.hand.length)
+
+            let hand = this.deck.draw(drawAmount);
+            hand.sort((a,b) => a.number - b.number);
+            hands[player.name] = hand;
+            console.log("Hand has " + hand.length)
         });
     }
 
@@ -144,7 +154,7 @@ class Game {
             // Sort by rank
             this.players.sort((a,b) => a.rank - b.rank);
 
-            this.deal();
+            this.deal(server.hands);
         }
         else{
             console.warn("Not enough players to start the game!")
@@ -161,7 +171,16 @@ class Game {
     }
 }
 
-let game = new Game([], "init");
+
+class Server {
+    constructor(){
+        this.clients = new Clients()
+        this.game = new Game([], "init"); 
+        this.hands = {};
+    }
+}
+
+let server = new Server();
 
 Http.listen(3000, () => {
     console.log("Listening at :3000...");
@@ -171,14 +190,9 @@ IO.use(function(client, next) {
     Session(client.handshake, {}, next);
 });
 
-// List of connected clients
-let clients = new Clients([]);
-
 IO.on("connection", client => {
     console.log(client.id);
     console.log(client.handshake.session.id)
-
-    // addClient(client.handshake.session);
 
     client.emit('sessiondata', client.handshake.session);
 
@@ -204,9 +218,9 @@ IO.on("connection", client => {
 
         client.handshake.session.save();
 
-        var player = new Player('id-will-be-deprecated', data.username);
+        var player = new Player(data.username);
 
-        clients.addClient(new Client(client.handshake.session.user.token, player));
+        server.clients.addClient(new Client(client.handshake.session.user.token, player));
         //emit logged_in for debugging purposes of this example
         client.emit('logged_in', client.handshake.session);
     });
@@ -216,7 +230,7 @@ IO.on("connection", client => {
         console.log(client.handshake.session.id)
         console.debug('client.handshake session data is %j.', client.handshake.session);
 
-        const session = clients.getClient(session_token);
+        const session = server.clients.getClient(session_token);
 
         if(session){
             client.handshake.session.user = {
@@ -233,45 +247,41 @@ IO.on("connection", client => {
         delete client.handshake.session.user;
         client.handshake.session.save();
 
-        clients.removeClient(session_token);
+        server.clients.removeClient(session_token);
         //emit logged_out for debugging purposes of this example
         console.debug('client.handshake session data is %j.', client.handshake.session);
 
         client.emit('logged_out', client.handshake.session);
     });
 
-    client.emit("game", game);
+    client.emit("updateGame", server.game);
     client.on("join", data => {
         // let playerSocketId = client.id;
         let playerName = data;
         let newPlayer = new Player(playerName);
-        game.addPlayer(newPlayer);
-        console.log("Players: " + game.players.length)
-        IO.emit("game", game);
+        server.game.addPlayer(newPlayer);
+        console.log("Players: " + server.game.players.length)
+        IO.emit("updateGame", server.game);
     });
 
     client.on("start", data => {
-        game.start();
+        server.game.start();
 
-        IO.emit("game", game);
+        IO.emit("updateGame", server.game);
     });
 
     client.on("pass", data => {
         console.log("Pass")
-        game.pass();
+        server.game.pass();
 
-        IO.emit("game", game);
+        IO.emit("updateGame", server.game);
+    });
+
+    client.on('getHand', token => {
+        let playerName = server.clients.getClientName(token);
+        client.emit('updateHane', server.hands[playerName]);
     });
 });
-
-function addClient(client){
-    if(clients[client.player.name]){
-        client = clients[session.id];
-    }
-    else{
-        clients[session.id] = session;
-    }
-}
 
 // TODO: Maybe construct some classes for these...
 function InitDeck(){

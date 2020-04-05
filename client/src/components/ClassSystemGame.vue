@@ -91,7 +91,7 @@
         console.info("sessiondata is ", data);
 
         if(data.user){
-          console.log('already logged in - setting username')
+          console.log('Logged in user - setting username to ' + data.user.username)
           this.playerName = data.user.username;
         }
       })
@@ -108,33 +108,34 @@
         console.info("logged_out event received. Check the console");
         console.info("sessiondata after logged_out event is ", data);
       })
-      this.socket.on("checksession", data => {
-        console.info("checksession event received. Check the console");
-        console.info("sessiondata after checksession event is ", data);
+      // this.socket.on("checksession", data => {
+      //   console.info("checksession event received. Check the console");
+      //   console.info("sessiondata after checksession event is ", data);
 
-        // TODO - in two places (here and in session data event...)
-        if(data.user){
-          console.log('already logged in - setting username')
-          this.playerName = data.user.username;
-        }
-      })
+      //   // TODO - in two places (here and in session data event...)
+      //   if(data.user){
+      //     console.log('already logged in - setting username')
+      //     this.playerName = data.user.username;
+      //   }
+      // })
 
-      this.socket.on("game", data => {
+      this.socket.on("updateGame", data => {
         this.game = data;
         this.playerCount = this.game.players.length;
         console.log("Player count updated to: " + this.playerCount)
 
-        var that = this;
+        // var that = this;
+        let session_token = this.$cookies.get('session_token');
 
         if(this.game.state === "started"){
-          // TODO should be getting only own hand...
-          // let myPlayerId = that.socket.id;
-          that.hand = that.game.players.find(x => x.name === that.playerName).hand;
-          that.myTurn = that.game.players[that.game.turnIndex].name === that.playerName;
-
-          console.log(that.hand.length);
+          this.socket.emit('getHand', session_token);
         }
       });
+
+      this.socket.on("updateHand", hand => {
+        this.hand = hand;
+        console.log('Hand updated to ' + hand.length + ' cards');
+      })
     },
     methods: {
       login(username, password) {
