@@ -83,7 +83,10 @@
     },
     mounted() {
       var session_token = this.$cookies.get('session_token');
-      this.checkSession(session_token);
+
+      if(session_token){
+        this.checkSession(session_token);
+      }
 
       // Session handling stuff
       this.socket.on("sessiondata", data => {
@@ -94,7 +97,13 @@
           console.log('Logged in user - setting username to ' + data.username);
           this.playerName = data.username;
         }
+        else {
+          this.playerName = '';
+          this.$cookies.remove('session_token');
+          console.log('Cleared up the previous login');
+        }
       })
+
       this.socket.on("logged_in", data => {
         this.playerName = data.username;
 
@@ -102,6 +111,7 @@
         console.info("logged_in event received. Check the console");
         console.info("sessiondata after logged_in event is ", data);
       })
+
       this.socket.on("logged_out", data => {
         this.playerName = '';
         this.$cookies.remove('session_token');

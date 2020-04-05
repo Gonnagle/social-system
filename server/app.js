@@ -200,9 +200,11 @@ Http.listen(3000, () => {
 });
 
 IO.on("connection", client => {
-    console.log(client.id);
-  
-    console.debug('Emitting session data');
+    console.log('Client %j joined', client.id);
+
+    console.log('Emitting game data for the new client');
+    client.emit("updateGame", server.game);
+
     client.on('login', data => {
         console.debug('Received login message');
 
@@ -221,6 +223,7 @@ IO.on("connection", client => {
         //emit logged_in for debugging purposes of this example
         client.emit('logged_in', client_session);
     });
+
     // Check session data via socket
     client.on('checksession', session_token => {
         console.debug('Received checksession message');
@@ -228,6 +231,7 @@ IO.on("connection", client => {
 
         client.emit('sessiondata', session);
     });
+
     // Unset session data via socket
     client.on('logout', session_token => {
         console.debug('Received logout message');
@@ -241,7 +245,6 @@ IO.on("connection", client => {
         client.emit('logged_out', session);
     });
 
-    client.emit("updateGame", server.game);
     client.on("join", data => {
         // let playerSocketId = client.id;
         let playerName = data;
