@@ -93,7 +93,7 @@ class Game {
     constructor(players, state){
         this.players = players;
         this.state = state;
-        this.deck = InitDeck();
+        this.deck = this.initDeck();
         this.turnIndex = 0;
     }
 
@@ -168,6 +168,31 @@ class Game {
         }
 
         // TODO check if round is over
+    }
+
+    // TODO: Maybe construct some classes for these...
+    initDeck(){
+        console.log("Initializing the deck")
+        const cards = [...Array(1).fill({number: 1, name: "One"}),
+            ...Array(2).fill({number: 2, name: "Two"}),
+            ...Array(3).fill({number: 3, name: "Three"}),
+            ...Array(4).fill({number: 4, name: "Four"}),
+            ...Array(5).fill({number: 5, name: "Five"}),
+            ...Array(6).fill({number: 6, name: "Six"}),
+            ...Array(7).fill({number: 7, name: "Seven"}),
+            ...Array(8).fill({number: 8, name: "Eight"}),
+            ...Array(9).fill({number: 9, name: "Nine"}),
+            ...Array(10).fill({number: 10, name: "Ten"}),
+            ...Array(11).fill({number: 11, name: "Eleven"}),
+            ...Array(12).fill({number: 12, name: "Twelve"}),
+            ...Array(2).fill({number: 13, name: "Joker"}),
+        ]
+
+        console.log(cards.length);
+        var deck = new Deck(cards);
+        deck.shuffle();
+
+        return deck;
     }
 }
 
@@ -283,27 +308,3 @@ IO.on("connection", client => {
     });
 });
 
-// TODO: Maybe construct some classes for these...
-function InitDeck(){
-    console.log("Initializing the deck")
-    const cards = [...Array(1).fill({number: 1, name: "One"}),
-        ...Array(2).fill({number: 2, name: "Two"}),
-        ...Array(3).fill({number: 3, name: "Three"}),
-        ...Array(4).fill({number: 4, name: "Four"}),
-        ...Array(5).fill({number: 5, name: "Five"}),
-        ...Array(6).fill({number: 6, name: "Six"}),
-        ...Array(7).fill({number: 7, name: "Seven"}),
-        ...Array(8).fill({number: 8, name: "Eight"}),
-        ...Array(9).fill({number: 9, name: "Nine"}),
-        ...Array(10).fill({number: 10, name: "Ten"}),
-        ...Array(11).fill({number: 11, name: "Eleven"}),
-        ...Array(12).fill({number: 12, name: "Twelve"}),
-        ...Array(2).fill({number: 13, name: "Joker"}),
-    ]
-
-    console.log(cards.length);
-    var deck = new Deck(cards);
-    deck.shuffle();
-
-    return deck;
-}
