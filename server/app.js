@@ -269,7 +269,8 @@ IO.on("connection", client => {
 
     client.on('getHand', token => {
         let playerName = server.clients.getClientName(token);
-        client.emit('updateHane', server.hands[playerName]);
+        console.log('Getting hand for player ' + playerName);
+        client.emit('updateHand', server.hands[playerName]);
     });
 });
 

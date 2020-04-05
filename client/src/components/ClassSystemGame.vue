@@ -39,7 +39,7 @@
           <button v-on:click="play()">Play</button>
         </div>
         <div v-else>
-          <p>Player {{ game.players[game.turnIndex].name }} is thinking...</p>
+          <p>Player {{ playerInTurn }} is thinking...</p>
         </div>
         <ul id="hand">
           <!-- TODO index as a temp key... -->
@@ -71,6 +71,7 @@
         },
         hand: [],
         pickedCards: [],
+        playerInTuirn: '',
         myTurn: false,
         joined: false,
         playerCount: 0,
@@ -119,8 +120,8 @@
         console.info("sessiondata after logged_out event is ", data);
       })
 
-      this.socket.on("updateGame", data => {
-        this.game = data;
+      this.socket.on("updateGame", game => {
+        this.game = game;
         this.playerCount = this.game.players.length;
         console.log("Player count updated to: " + this.playerCount)
 
@@ -128,6 +129,16 @@
         let session_token = this.$cookies.get('session_token');
 
         if(this.game.state === "started"){
+          this.playerInTurn = this.game.players[this.game.turnIndex].name;
+
+          if(this.playerInTurn === this.playerName){
+            this.myTurn = true;
+          }
+          else{
+            this.myTurn = false;
+          }
+
+          console.log('Getting hand based on token ' + session_token)
           this.socket.emit('getHand', session_token);
         }
       });
