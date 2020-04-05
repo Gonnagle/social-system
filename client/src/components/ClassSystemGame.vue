@@ -36,7 +36,16 @@
         <div v-else>
           <p>Player {{ playerInTurn }} is thinking...</p>
         </div>
+        <ul id="selected">
+          SELECTED CARDS:
+          <!-- TODO index as a temp key... -->
+          <li v-for="(card, index) in pickedCards" :key="index">
+            {{ card.number }} {{ card.name }}
+            <button v-if="myTurn" v-on:click="returnToHand(card, index)">Remove</button>
+          </li>
+        </ul>
         <ul id="hand">
+          HAND:
           <!-- TODO index as a temp key... -->
           <li v-for="(card, index) in hand" :key="index">
             {{ card.number }} {{ card.name }}
@@ -140,6 +149,7 @@
 
       this.socket.on("updateHand", hand => {
         this.hand = hand;
+        this.pickedCards = [];
         console.log('Hand updated to ' + hand.length + ' cards');
       })
     },
@@ -164,9 +174,16 @@
       }, 
       pick(card, index) {
         this.pickedCards.push(card);
+        this.hand.splice(index, 1);
         console.log("Picked " + card.name + " (index: " + index + ")");
         // TODO check can that be played by itself or does somethgin else need to picked also
         // + leave only valid possibilities to be picked
+      },
+      returnToHand(card, index) {
+        this.hand.push(card);
+        this.hand.sort((a,b) => a.number - b.number);
+        this.pickedCards.splice(index, 1);
+        console.log("Picked " + card.name + " (index: " + index + ")");
       },
       pass() {
         this.socket.emit("pass");
