@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <h2>Powered by:</h2>
-    <img alt="Vue logo" src="./assets/logo.png">
+    <img id="logo" alt="Vue logo" src="./assets/logo.png">
     <ClassSystemGame msg="Welcome to Class-System Game.js App"/>
   </div>
 </template>
@@ -25,5 +25,9 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+img {
+  height: 80px;
 }
 </style>
