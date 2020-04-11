@@ -61,10 +61,6 @@
 <script>
   import io from "socket.io-client";
   
-  // TODO: round params should be coming from server (like round.playedCards.last() and round.amountOfCardsToPlay)
-  const lastValuePlayed = 10; 
-  const roundDotAmountOfCardsToPlay = 2;
-
   export default {
     name: 'ClassSystemGame',
     props: {
@@ -76,7 +72,8 @@
         username: '',
         password: '',
         game: {
-          players: []
+          players: [],
+          rounds: [],
         },
         hand: [],
         pickedCards: [],
@@ -136,7 +133,6 @@
         this.playerCount = this.game.players.length;
         console.log("Player count updated to: " + this.playerCount);
         console.log('Received hands: ' + game.hands ?? game.hands.length);
-        // var that = this;
         let session_token = this.$cookies.get('session_token');
 
         if(this.game.state === "started"){
@@ -220,7 +216,7 @@
         this.hand.forEach(c => c.validOption = false);
 
         // Required amount of cards selected is not reached -> can select more
-        if (this.pickedCards.length !== roundDotAmountOfCardsToPlay){
+        if (this.pickedCards.length !== this.game.rounds[this.game.rounds.length - 1].cardsToPlay){
           // At least one non joker selected -> can only select same number & jokers
           if(this.pickedCards.length > 0 && this.pickedCards.some(c => c.number < 13)){
             let previousSelection = this.pickedCards.find(c => c.number < 13);
@@ -230,7 +226,7 @@
           }
           // Otherwise can select anything lower than last played number
           else {
-            this.hand.filter(c => c.number < lastValuePlayed)
+            this.hand.filter(c => c.number < this.game.rounds[this.game.rounds.length - 1].lastNumberPlayed)
               .forEach(c => c.validOption = true);
           }
         }
