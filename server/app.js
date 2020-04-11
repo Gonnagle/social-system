@@ -73,12 +73,53 @@ class Clients {
     }
 }
 
+class PlayAction {
+    constructor(cards, player) {
+        // TODO validate that valid set of cards?
+        this.cards = cards;
+        this.player = player;
+    }
+
+    getEffectiveNumber() {
+        var effectiveNumber = Math.min.apply(Math, this.cards.map(c => c.number));
+        console.log('Getting effective number for play being ' + effectiveNumber); 
+        return effectiveNumber;
+    }
+}
+
+class Round {
+    constructor(currentPlayer) {
+        this.currentPlayer = currentPlayer;
+        this.plays = [];
+        this.cardsToPlay = -1;
+        this.lastNumberPlayed = 999;
+    }
+
+    play(playAction){
+        // TODO validate that a valid play?
+        this.plays.push(playAction);
+        this.lastNumberPlayed = playAction.getEffectiveNumber();
+
+        // On first action set also the amount of cards to play on this round
+        if(this.cardsToPlay === -1){
+            console.log('Setting round cardsToPlay to ' + playAction.cards.length);
+            this.cardsToPlay = playAction.cards.length;
+        }
+    }
+
+    getLastPlayer(){
+        return this.plays[this.plays.length - 1].player;
+    }
+}
+
 class Game {
     constructor(players, state){
         this.players = players;
+        this.hands = {};
         this.state = state;
         this.deck = this.initDeck();
         this.turnIndex = 0;
+        this.rounds = [];
     }
 
     addPlayer(player){
@@ -101,7 +142,7 @@ class Game {
         this.players.push(player);
     }
 
-    deal(hands){
+    deal(){
         let deckSize = this.deck.remaining();
         console.log("Deck size: " + deckSize);
         let minSizeOfHand = Math.floor(deckSize / this.players.length);
@@ -121,7 +162,7 @@ class Game {
 
             let hand = this.deck.draw(drawAmount);
             hand.sort((a,b) => a.number - b.number);
-            hands[player.name] = hand;
+            this.hands[player.name] = hand;
             console.log("Hand has " + hand.length)
         });
     }
@@ -138,7 +179,10 @@ class Game {
             // Sort by rank
             this.players.sort((a,b) => a.rank - b.rank);
 
-            this.deal(server.hands);
+            this.deal();
+
+            let firstRound = new Round(this.players[0].name);
+            this.rounds.push(firstRound);
         }
         else{
             console.warn("Not enough players to start the game!")
@@ -152,7 +196,32 @@ class Game {
             this.turnIndex = 0;
         }
 
-        // TODO check if round is over
+        let currentRound = this.getCurrentRound();
+
+        if(currentRound.getLastPlayer() === this.getCurrentPlayer().name){
+            console.log('TODO Player ' + this.getCurrentPlayer().name + " won the round!");
+        }
+    }
+
+    play(playAction){
+        this.getCurrentRound().play(playAction);
+        let playersHand = this.hands[playAction.player];
+        
+        // Remove all played cards one by one
+        playAction.cards.forEach(playedCard => {
+            console.log('Removing card from hand: ' + playedCard.number);
+            playersHand.splice(playersHand.findIndex(c => c.number === playedCard.number), 1);
+        })
+
+        this.pass();
+    }
+
+    getCurrentRound(){
+        return this.rounds[this.rounds.length - 1];
+    }
+
+    getCurrentPlayer(){
+        return this.players[this.turnIndex];
     }
 
     // TODO: Maybe construct some classes for these...
@@ -186,11 +255,15 @@ class Server {
     constructor(){
         this.clients = new Clients()
         this.game = new Game([], "init"); 
-        this.hands = {};
     }
 
     getSession(session_token){
         return this.clients.getClient(session_token);
+    }
+
+    getPublicGameInfo(){
+        // Mask hands as those are not public info
+        return {...this.game, hands: null}
     }
 }
 
@@ -202,7 +275,7 @@ Http.listen(3000, () => {
 
 IO.on("connection", client => {
     console.log('Client %j connected to server', client.id);
-    
+
     client.on('login', data => {
         console.debug('Received login message');
 
@@ -228,7 +301,7 @@ IO.on("connection", client => {
         const session = server.clients.getClient(session_token);
 
         client.emit('sessiondata', session);
-        client.emit('updateGame', server.game);
+        client.emit('updateGame', server.getPublicGameInfo());
     });
 
     // Unset session data via socket
@@ -250,26 +323,35 @@ IO.on("connection", client => {
         let newPlayer = new Player(playerName);
         server.game.addPlayer(newPlayer);
         console.log("Players: " + server.game.players.length)
-        IO.emit("updateGame", server.game);
+        IO.emit('updateGame', server.getPublicGameInfo());
     });
 
     client.on("start", data => {
         server.game.start();
 
-        IO.emit("updateGame", server.game);
+        IO.emit('updateGame', server.getPublicGameInfo());
     });
 
     client.on("pass", data => {
         console.log("Pass")
         server.game.pass();
 
-        IO.emit("updateGame", server.game);
+        IO.emit('updateGame', server.getPublicGameInfo());
+    });
+
+    client.on('play', action => {
+        let playerName = server.clients.getClientName(action.token);
+        let playAction = new PlayAction(action.cards, playerName);
+        server.game.play(playAction);
+
+        IO.emit('updateGame', server.getPublicGameInfo());
+        client.emit('updateHand', server.game.hands[playerName]);
     });
 
     client.on('getHand', token => {
         let playerName = server.clients.getClientName(token);
         console.log('Getting hand for player ' + playerName);
-        client.emit('updateHand', server.hands[playerName]);
+        client.emit('updateHand', server.game.hands[playerName]);
     });
 });
 

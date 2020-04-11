@@ -134,8 +134,8 @@
       this.socket.on("updateGame", game => {
         this.game = game;
         this.playerCount = this.game.players.length;
-        console.log("Player count updated to: " + this.playerCount)
-
+        console.log("Player count updated to: " + this.playerCount);
+        console.log('Received hands: ' + game.hands ?? game.hands.length);
         // var that = this;
         let session_token = this.$cookies.get('session_token');
 
@@ -202,8 +202,13 @@
         this.socket.emit("pass");
       },
       play() {
-        console.log("Play! TODO play picked cards");
-        this.socket.emit("play", this.pickedCards);
+        console.log("Play! Playing " + this.pickedCards.length + " cards");
+        let session_token = this.$cookies.get('session_token');
+        let action = {
+          cards: this.pickedCards,
+          token: session_token
+        }
+        this.socket.emit("play", action);
       },
       test() {
         console.log("Test-button pushed");
