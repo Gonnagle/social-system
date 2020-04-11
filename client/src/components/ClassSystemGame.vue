@@ -49,7 +49,7 @@
           <!-- TODO index as a temp key... -->
           <li v-for="(card, index) in hand" :key="index">
             {{ card.number }} {{ card.name }}
-            <button v-if="myTurn" v-on:click="pick(card, index)">Pick</button>
+            <button v-if="myTurn && card.validOption" v-on:click="pick(card, index)">Pick</button>
           </li>
         </ul>
       </div>
@@ -60,6 +60,11 @@
 
 <script>
   import io from "socket.io-client";
+  
+  // TODO: round params should be coming from server (like round.playedCards.last() and round.amountOfCardsToPlay)
+  const lastValuePlayed = 10; 
+  const roundDotAmountOfCardsToPlay = 2;
+
   export default {
     name: 'ClassSystemGame',
     props: {
@@ -153,6 +158,9 @@
         this.hand = hand;
         this.pickedCards = [];
         console.log('Hand updated to ' + hand.length + ' cards');
+        
+        // TODO: This info should be coming from server already for the whole hand
+        this.updateValidOptions();
       })
     },
     methods: {
@@ -175,17 +183,20 @@
         this.socket.emit("start");
       }, 
       pick(card, index) {
+        // TODO should have object to handle picking card (and to update what are valid actions after...)
         this.pickedCards.push(card);
         this.hand.splice(index, 1);
         console.log("Picked " + card.name + " (index: " + index + ")");
-        // TODO check can that be played by itself or does somethgin else need to picked also
-        // + leave only valid possibilities to be picked
+
+        this.updateValidOptions();
       },
       returnToHand(card, index) {
         this.hand.push(card);
         this.hand.sort((a,b) => a.number - b.number);
         this.pickedCards.splice(index, 1);
-        console.log("Picked " + card.name + " (index: " + index + ")");
+        console.log("Removed " + card.name + " (index: " + index + ")");
+
+        this.updateValidOptions();
       },
       pass() {
         this.socket.emit("pass");
@@ -196,6 +207,28 @@
       },
       test() {
         console.log("Test-button pushed");
+      },
+      updateValidOptions(){
+        console.log(this.pickedCards.length + ' cards selected');
+        
+        // Init all to be invalid options
+        this.hand.forEach(c => c.validOption = false);
+
+        // Required amount of cards selected is not reached -> can select more
+        if (this.pickedCards.length !== roundDotAmountOfCardsToPlay){
+          // At least one non joker selected -> can only select same number & jokers
+          if(this.pickedCards.length > 0 && this.pickedCards.some(c => c.number < 13)){
+            let previousSelection = this.pickedCards.find(c => c.number < 13);
+            console.log('Selected number is ' + previousSelection.number);
+            this.hand.filter(c => c.number === 13 || c.number === previousSelection.number)
+              .forEach(c => c.validOption = true);
+          }
+          // Otherwise can select anything lower than last played number
+          else {
+            this.hand.filter(c => c.number < lastValuePlayed)
+              .forEach(c => c.validOption = true);
+          }
+        }
       }
     }
   }
