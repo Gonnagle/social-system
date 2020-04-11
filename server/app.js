@@ -146,6 +146,7 @@ class Game {
     }
 
     pass(){
+        console.log('Passing turn to the next player')
         ++this.turnIndex;
         if(this.turnIndex >= this.players.length){
             this.turnIndex = 0;
@@ -200,11 +201,8 @@ Http.listen(3000, () => {
 });
 
 IO.on("connection", client => {
-    console.log('Client %j joined', client.id);
-
-    console.log('Emitting game data for the new client');
-    client.emit("updateGame", server.game);
-
+    console.log('Client %j connected to server', client.id);
+    
     client.on('login', data => {
         console.debug('Received login message');
 
@@ -230,6 +228,7 @@ IO.on("connection", client => {
         const session = server.clients.getClient(session_token);
 
         client.emit('sessiondata', session);
+        client.emit('updateGame', server.game);
     });
 
     // Unset session data via socket

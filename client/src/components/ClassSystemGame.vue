@@ -54,7 +54,7 @@
         </ul>
       </div>
     </div>
-    <button v-on:click="checkSession()">Test</button>
+    <button v-on:click="test()">Test</button>
   </div>
 </template>
 
@@ -88,6 +88,8 @@
     },
     mounted() {
       var session_token = this.$cookies.get('session_token');
+
+      console.log('Session token: ' + session_token);
 
       if(session_token){
         this.checkSession(session_token);
@@ -191,8 +193,10 @@
       play() {
         console.log("Play! TODO play picked cards");
         this.socket.emit("play", this.pickedCards);
+      },
+      test() {
+        console.log("Test-button pushed");
       }
-
     }
   }
 </script>
