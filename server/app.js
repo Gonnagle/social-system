@@ -12,7 +12,6 @@ const MinPlayers = 1; // TODO should be 4
 
 class Player {
     constructor(name){
-        // this.id = id;
         this.name = name;
         this.rank = null; // TODO
     }
@@ -88,17 +87,18 @@ class PlayAction {
 }
 
 class Round {
-    constructor(currentPlayer) {
-        this.currentPlayer = currentPlayer;
+    constructor() {
         this.plays = [];
         this.cardsToPlay = -1;
         this.lastNumberPlayed = 999;
+        this.lastPlayer = null;
     }
 
     play(playAction){
         // TODO validate that a valid play?
         this.plays.push(playAction);
         this.lastNumberPlayed = playAction.getEffectiveNumber();
+        this.setLastPlayer(playAction.player);
 
         // On first action set also the amount of cards to play on this round
         if(this.cardsToPlay === -1){
@@ -107,14 +107,19 @@ class Round {
         }
     }
 
+    setLastPlayer(player){
+        this.lastPlayer = player;
+    }
+
     getLastPlayer(){
-        return this.plays[this.plays.length - 1].player;
+        return this.lastPlayer;
     }
 }
 
 class Game {
     constructor(players, state){
         this.players = players;
+        this.finishedPlayers = [];
         this.hands = {};
         this.state = state;
         this.deck = this.initDeck();
@@ -181,7 +186,7 @@ class Game {
 
             this.deal();
 
-            let firstRound = new Round(this.players[0].name);
+            let firstRound = new Round();
             this.rounds.push(firstRound);
         }
         else{
@@ -190,20 +195,57 @@ class Game {
     }
 
     pass(){
+        this.passTurnToNextPlayer();
+
+        let currentRound = this.getCurrentRound();
+
+        if(currentRound.getLastPlayer() === this.getCurrentPlayer().name){
+            console.log('Player ' + this.getCurrentPlayer().name + " won the round! Starting new round...");
+            let newRound = new Round();
+            this.rounds.push(newRound);
+        }
+    }
+
+    removeCurrentPlayerAsFinished(){
+        let player = this.players.splice(this.turnIndex, 1)[0];
+
+        this.finishedPlayers.push(player); // TODO updating ranks?
+
+        // Only one player left -> game finished
+        if(this.players.length === 1){
+            console.log('Game finished!');
+
+            // Add last player to finished players also
+            let lastPlayer = this.players.splice(this.turnIndex, 1)[0];
+            this.finishedPlayers.push(lastPlayer);
+
+            this.state = 'finished';
+        }
+        else {
+            // Move turn to the next player
+            this.passTurnToNextPlayer();
+            // Hack to artificially set the last player to next player (so even if next player 
+            // does not play he is counted as starter and we don't run into issues as the actual last player is no longer in game)
+            this.getCurrentRound().setLastPlayer(this.getCurrentPlayer());
+        }
+    }
+
+    passTurnToNextPlayer(){
         console.log('Passing turn to the next player')
         ++this.turnIndex;
         if(this.turnIndex >= this.players.length){
             this.turnIndex = 0;
         }
-
-        let currentRound = this.getCurrentRound();
-
-        if(currentRound.getLastPlayer() === this.getCurrentPlayer().name){
-            console.log('TODO Player ' + this.getCurrentPlayer().name + " won the round!");
-        }
     }
 
     play(playAction){
+        let playerInTurn = this.getCurrentPlayer();
+
+        if(playerInTurn.name !== playAction.player){
+            console.error('SECURITY ERROR - PLAY ACTION RECEIVED FOR PLAYER NOT IN TURN!');
+            return;
+        }
+
         this.getCurrentRound().play(playAction);
         let playersHand = this.hands[playAction.player];
         
@@ -213,7 +255,16 @@ class Game {
             playersHand.splice(playersHand.findIndex(c => c.number === playedCard.number), 1);
         })
 
-        this.pass();
+        // let playersIndex = ;
+
+        // Check if player is out of the game
+        if(playersHand.length === 0){
+            console.log('Player ' + playAction.player + ' is out of the game!');
+            this.removeCurrentPlayerAsFinished(); // includes passing on the turn
+        }
+        else{
+            this.pass();
+        }
     }
 
     getCurrentRound(){

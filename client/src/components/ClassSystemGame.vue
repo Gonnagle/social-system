@@ -53,6 +53,12 @@
           </li>
         </ul>
       </div>
+      <p>Results:</p>
+      <ul id="player-list">
+        <li v-for="player in game.finishedPlayers" :key="player.id">
+          [{{ player.rank}}] {{ player.name }}
+        </li>
+      </ul>
     </div>
     <button v-on:click="test()">Test</button>
   </div>
@@ -73,6 +79,7 @@
         password: '',
         game: {
           players: [],
+          finishedPlayers: [],
           rounds: [],
         },
         hand: [],
