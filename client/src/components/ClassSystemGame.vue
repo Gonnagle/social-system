@@ -39,7 +39,7 @@
         <div v-if="myTurn">
           <p>Your turn!</p>
           <button v-on:click="pass()">Pass</button>
-          <button v-on:click="play()">Play</button>
+          <button :disabled="!validSelection" v-on:click="play()">Play</button>
         </div>
         <div v-else>
           <p>Player {{ playerInTurn }} is thinking...</p>
@@ -100,6 +100,7 @@
         pickedCards: [],
         playerInTuirn: '',
         myTurn: false,
+        validSelection: false,
         joined: false,
         playerCount: 0,
         playerName: ''
@@ -244,8 +245,10 @@
         // Init all to be invalid options
         this.hand.forEach(c => c.validOption = false);
 
+        const currentAmountOfCardsToPlay = this.getCurrentAmountOfCardsToPlay();
+
         // Required amount of cards selected is not reached -> can select more
-        if (this.pickedCards.length !== this.game.rounds[this.game.rounds.length - 1].amountOfCardsToPlay){
+        if (this.pickedCards.length !== currentAmountOfCardsToPlay){
           // At least one non joker selected -> can only select same number & jokers
           if(this.pickedCards.length > 0 && this.pickedCards.some(c => c.number < 13)){
             let previousSelection = this.pickedCards.find(c => c.number < 13);
@@ -261,6 +264,22 @@
               .forEach(c => c.validOption = true);
           }
         }
+
+        if(this.pickedCards.length === currentAmountOfCardsToPlay){
+          this.validSelection = true;
+        }
+        else if(this.getCurrentRound().plays.length === 0 && this.pickedCards.length > 0){
+          this.validSelection = true;
+        }
+        else{
+          this.validSelection = false; // Otherwise false
+        }
+      },
+      getCurrentAmountOfCardsToPlay(){
+        return this.getCurrentRound().amountOfCardsToPlay;
+      },
+      getCurrentRound(){
+        return this.game.rounds[this.game.rounds.length - 1];
       }
     }
   }
