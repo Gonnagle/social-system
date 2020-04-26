@@ -28,6 +28,14 @@
         </li>
       </ul>
       <div v-if="game.state === 'started'">
+        <div>
+          Previous actions on this round:
+          <ul>
+            <li v-for="(play, index) in currentRound.plays" :key="index">
+              {{ play.player }}: <span v-for="(card, index2) in play.cards" :key="index2"> {{ card.number }}</span>
+            </li>
+          </ul>
+        </div>
         <div v-if="myTurn">
           <p>Your turn!</p>
           <button v-on:click="pass()">Pass</button>
@@ -80,7 +88,13 @@
         game: {
           players: [],
           finishedPlayers: [],
-          rounds: [],
+        },
+        currentRound: {
+          // TODO: Repeating the defaults from server side...
+          plays: [],
+          amountOfCardsToPlay: -1,
+          lastNumberPlayed: 999,
+          lastPlayer: null
         },
         hand: [],
         pickedCards: [],
@@ -150,6 +164,14 @@
           }
           else{
             this.myTurn = false;
+          }
+
+          if(this.game.rounds){
+            this.currentRound = this.game.rounds[this.game.rounds.length - 1];
+            console.log('currentRound has ' + this.currentRound.plays.length + ' actions played');
+          }
+          else{
+            console.log('no current round yet');
           }
 
           console.log('Getting hand based on token ' + session_token)
@@ -223,7 +245,7 @@
         this.hand.forEach(c => c.validOption = false);
 
         // Required amount of cards selected is not reached -> can select more
-        if (this.pickedCards.length !== this.game.rounds[this.game.rounds.length - 1].cardsToPlay){
+        if (this.pickedCards.length !== this.game.rounds[this.game.rounds.length - 1].amountOfCardsToPlay){
           // At least one non joker selected -> can only select same number & jokers
           if(this.pickedCards.length > 0 && this.pickedCards.some(c => c.number < 13)){
             let previousSelection = this.pickedCards.find(c => c.number < 13);
@@ -233,7 +255,9 @@
           }
           // Otherwise can select anything lower than last played number
           else {
-            this.hand.filter(c => c.number < this.game.rounds[this.game.rounds.length - 1].lastNumberPlayed)
+            let lastNumberPlayed = this.game.rounds[this.game.rounds.length - 1].lastNumberPlayed;
+            console.log('Last number played was: ' + lastNumberPlayed);
+            this.hand.filter(c => c.number < lastNumberPlayed)
               .forEach(c => c.validOption = true);
           }
         }

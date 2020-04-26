@@ -89,8 +89,8 @@ class PlayAction {
 class Round {
     constructor() {
         this.plays = [];
-        this.cardsToPlay = -1;
-        this.lastNumberPlayed = 999;
+        this.amountOfCardsToPlay = -1;
+        this.lastNumberPlayed = 999;;
         this.lastPlayer = null;
     }
 
@@ -101,9 +101,9 @@ class Round {
         this.setLastPlayer(playAction.player);
 
         // On first action set also the amount of cards to play on this round
-        if(this.cardsToPlay === -1){
-            console.log('Setting round cardsToPlay to ' + playAction.cards.length);
-            this.cardsToPlay = playAction.cards.length;
+        if(this.amountOfCardsToPlay === -1){
+            console.log('Setting round amountOfCardsToPlay to ' + playAction.cards.length);
+            this.amountOfCardsToPlay = playAction.cards.length;
         }
     }
 
@@ -248,7 +248,8 @@ class Game {
 
         this.getCurrentRound().play(playAction);
         let playersHand = this.hands[playAction.player];
-        
+        console.log('Last number played on this round updated to: ' + this.getCurrentRound().lastNumberPlayed)
+
         // Remove all played cards one by one
         playAction.cards.forEach(playedCard => {
             console.log('Removing card from hand: ' + playedCard.number);
@@ -268,7 +269,7 @@ class Game {
     }
 
     getCurrentRound(){
-        return this.rounds[this.rounds.length - 1];
+        return this.rounds.length > 0 ? this.rounds[this.rounds.length - 1] : null;
     }
 
     getCurrentPlayer(){
@@ -313,6 +314,12 @@ class Server {
     }
 
     getPublicGameInfo(){
+        console.log(this.game.rounds.length);
+
+        if(this.game.rounds.length > 0){
+            console.log(this.game.getCurrentRound().lastNumberPlayed);
+        }
+
         // Mask hands as those are not public info
         return {...this.game, hands: null}
     }
