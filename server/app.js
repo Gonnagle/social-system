@@ -102,9 +102,9 @@ class Round {
                 console.error('Cards to play on round: ' + this.amountOfCardsToPlay + ' received play with ' + playAction.cards.length + ' cards!');
                 throw new Error('Invalid amount of cards played!');
             }
-            if(playAction.getEffectiveNumber() <= this.lastNumberPlayed){
+            if(playAction.getEffectiveNumber() >= this.lastNumberPlayed){
                 console.error('Last number played on round: ' + this.lastNumberPlayed + ' received play with number' + playAction.getEffectiveNumber());
-                throw new Error('Too small number played!');
+                throw new Error('Too big number played!');
             }
         }
 
