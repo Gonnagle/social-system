@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <h2>Powered by:</h2>
-    <img id="logo" alt="Vue logo" src="./assets/logo.png">
+    <!-- <h2>Powered by:</h2>
+    <img id="logo" alt="Vue logo" src="./assets/logo.png"> -->
     <ClassSystemGame msg="Welcome to Class-System Game.js App"/>
   </div>
 </template>
