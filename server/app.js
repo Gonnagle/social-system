@@ -95,7 +95,19 @@ class Round {
     }
 
     play(playAction){
-        // TODO validate that a valid play?
+        if(this.plays.length > 0){
+            console.log('Not first play in round -> validating the play');
+            
+            if(playAction.cards.length !== this.amountOfCardsToPlay){
+                console.error('Cards to play on round: ' + this.amountOfCardsToPlay + ' received play with ' + playAction.cards.length + ' cards!');
+                throw new Error('Invalid amount of cards played!');
+            }
+            if(playAction.getEffectiveNumber() <= this.lastNumberPlayed){
+                console.error('Last number played on round: ' + this.lastNumberPlayed + ' received play with number' + playAction.getEffectiveNumber());
+                throw new Error('Too small number played!');
+            }
+        }
+
         this.plays.push(playAction);
         this.lastNumberPlayed = playAction.getEffectiveNumber();
         this.setLastPlayer(playAction.player);
