@@ -6,7 +6,7 @@ const Http = require("http").Server(App);
 const IO = require("socket.io")(Http);
 const Crypto = require('crypto');
 
-const MinPlayers = 1; // TODO should be 4
+
 
 // Declare classes
 const Server = require("./Classes/Server")

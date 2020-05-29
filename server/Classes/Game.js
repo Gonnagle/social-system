@@ -1,5 +1,5 @@
 const Deck = require("card-deck");
-
+const MinPlayers = 1; // TODO should be 4
 module.exports = class Game {
     constructor(players, state) {
         this.players = players;
